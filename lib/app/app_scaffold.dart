@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import '../shared/widgets/bottom_nav_bar.dart';
+import '../features/pages/home_page.dart';
+import '../features/pages/workout_page.dart';
+import '../features/pages/play_page.dart';
+import '../features/pages/profile_page.dart';
+import '../features/pages/calendar_page.dart';
 
 class AppScaffold extends StatefulWidget {
   const AppScaffold({super.key});
@@ -12,11 +17,11 @@ class _AppScaffoldState extends State<AppScaffold> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = const [
-    Center(child: Text('Home Tab')),        // index 0 - Home
-    Center(child: Text('Workout Tab')),     // index 1 - Workout
-    Center(child: Text('Play Tab')),        // index 2 - Play (กลาง)
-    Center(child: Text('Calendar Tab')),    // index 3 - Calendar
-    Center(child: Text('Profile Tab')),     // index 4 - Profile
+    HomePage(), 
+    WorkoutPage(),
+    PlayPage(), 
+    CalendarPage(),
+    ProfilePage(),
   ];
 
   void _onTap(int index) {
@@ -28,9 +33,6 @@ class _AppScaffoldState extends State<AppScaffold> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Today I Lift'),
-      ),
       body: _pages[_currentIndex],
       bottomNavigationBar: BottomNavBar(
         currentIndex: _currentIndex,
