@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'widgets/stat_card.dart';
-import 'widgets/last_workout_card.dart';
-import 'widgets/routine_card.dart';
+import 'shared/widgets/stat_card.dart';
+import 'shared/widgets/last_workout_card.dart';
+import 'shared/widgets/routine_card.dart';
 import 'routine_screen.dart';
 
 class HomeScreen extends StatefulWidget {

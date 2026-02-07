@@ -6,6 +6,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String? subtitle;
   final List<Widget>? actions;
   final bool showDate;
+  final bool showCloseButton;
 
   const GradientAppBar({
     super.key,
@@ -13,6 +14,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.subtitle,
     this.actions,
     this.showDate = true,
+    this.showCloseButton = false,
   });
 
   @override
@@ -26,10 +28,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            Color(0xFFFF9966), 
-            Color(0xFFFF5E62), 
-          ],
+          colors: [Color(0xFFFF9966), Color(0xFFFF5E62)],
         ),
       ),
       child: SafeArea(
@@ -78,7 +77,17 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
                       ],
                     ),
                   ),
-                  if (actions != null) ...actions!,
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (actions != null) ...actions!,
+                      if (showCloseButton)
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.white),
+                          onPressed: () => Navigator.of(context).maybePop(),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ],
