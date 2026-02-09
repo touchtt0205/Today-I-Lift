@@ -7,6 +7,8 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool showDate;
   final bool showCloseButton;
+  final Widget? bottomContent;
+  final double bottomHeight;
 
   const GradientAppBar({
     super.key,
@@ -15,6 +17,8 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.showDate = true,
     this.showCloseButton = false,
+    this.bottomContent,
+    this.bottomHeight = 0,
   });
 
   @override
@@ -90,6 +94,10 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
                   ),
                 ],
               ),
+              if (bottomContent != null) ...[
+                const SizedBox(height: 20),
+                bottomContent!,
+              ],
             ],
           ),
         ),
@@ -98,5 +106,5 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   }
 
   @override
-  Size get preferredSize => const Size.fromHeight(140);
+  Size get preferredSize => Size.fromHeight(120 + bottomHeight);
 }
