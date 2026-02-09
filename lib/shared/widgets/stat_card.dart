@@ -1,55 +1,67 @@
 import 'package:flutter/material.dart';
 
 class StatCard extends StatelessWidget {
-  final IconData icon;
+  final String icon;
   final String label;
   final String value;
-  final String? subValue;
+  final String sublabel;
 
   const StatCard({
     super.key,
     required this.icon,
     required this.label,
     required this.value,
-    this.subValue,
+    this.sublabel = '',
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 100,
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.2),
-        borderRadius: BorderRadius.circular(16),
+        color: Colors.white.withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: Colors.white70, size: 16),
+              Text(icon, style: const TextStyle(fontSize: 16)),
               const SizedBox(width: 4),
-              Text(
-                label,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
+              Expanded(
+                child: Text(
+                  label,
+                  style: const TextStyle(fontSize: 11, color: Colors.white),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
+          const SizedBox(height: 4),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+              if (sublabel.isNotEmpty) ...[
+                const SizedBox(width: 4),
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Text(
+                    sublabel,
+                    style: const TextStyle(fontSize: 11, color: Colors.white),
+                  ),
+                ),
+              ],
+            ],
           ),
-          if (subValue != null)
-            Text(
-              subValue!,
-              style: const TextStyle(color: Colors.white70, fontSize: 12),
-            ),
         ],
       ),
     );
