@@ -15,7 +15,7 @@ class _LoginPageState extends State<LoginPage> {
   final emailController = TextEditingController();
   final passController = TextEditingController();
 
-  final _repo = AuthRepository(AuthService());
+  final _authService = AuthService();
 
   bool _isLoading = false;
   bool _obscurePassword = true;
@@ -37,12 +37,15 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await _repo.login(
+      await _authService.login(
         emailController.text.trim(),
         passController.text.trim(),
       );
     } catch (_) {
-      setState(() => _errorMessage = 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน');
+      setState(
+        () =>
+            _errorMessage = 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -55,7 +58,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     try {
-      await _repo.loginWithGoogle();
+      await _authService.loginWithGoogle();
     } catch (_) {
       setState(() => _errorMessage = 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้');
     } finally {
@@ -113,10 +116,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   const Text(
                     'เข้าสู่ระบบเพื่อเริ่มออกกำลังกาย',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
-                    ),
+                    style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                   ),
 
                   const SizedBox(height: 40),
@@ -284,9 +284,11 @@ class _LoginPageState extends State<LoginPage> {
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
-                      onPressed: _isLoading ? null : () {
-                        // Navigate to forgot password
-                      },
+                      onPressed: _isLoading
+                          ? null
+                          : () {
+                              // Navigate to forgot password
+                            },
                       style: TextButton.styleFrom(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 8,
@@ -314,7 +316,9 @@ class _LoginPageState extends State<LoginPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF8551),
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(0xFFFF8551).withOpacity(0.6),
+                        disabledBackgroundColor: const Color(
+                          0xFFFF8551,
+                        ).withOpacity(0.6),
                         elevation: 0,
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(
