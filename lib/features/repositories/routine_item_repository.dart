@@ -9,6 +9,7 @@ class RoutineItemRepository {
         .select('*, exercises(*)')
         .eq('routine_id', routineId)
         .order('order_index');
+    
 
     return List<Map<String, dynamic>>.from(res);
   }

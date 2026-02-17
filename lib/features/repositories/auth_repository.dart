@@ -1,19 +1,21 @@
-import '../services/auth_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthRepository {
-  final AuthService _service;
+  final _client = Supabase.instance.client;
 
-  AuthRepository(this._service);
-
-  Future<void> login(String email, String password) {
-    return _service.login(email, password);
+  Future<void> login(String email, String password) async {
+    await _client.auth.signInWithPassword(email: email, password: password);
   }
 
-  Future<void> loginWithGoogle() {
-    return _service.loginWithGoogle();
+  Future<void> loginWithGoogle() async {
+    await _client.auth.signInWithOAuth(
+      OAuthProvider.google,
+      redirectTo: 'io.supabase.flutter://login-callback',
+      queryParams: {'prompt': 'select_account'},
+    );
   }
 
-  Future<void> signUp(String email, String password) {
-    return _service.signUp(email, password);
+  Future<void> signUp(String email, String password) async {
+    await _client.auth.signUp(email: email, password: password);
   }
 }
