@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:today_i_lift/shared/constants/routine_appearance.dart';
 
 class RoutineCard extends StatelessWidget {
   final Map<String, dynamic> routine;
@@ -19,31 +20,12 @@ class RoutineCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = [
-      const Color(0xFFEF4444),
-      const Color(0xFFFF8551),
-      const Color(0xFFFBBF24),
-      const Color(0xFF22C55E),
-      const Color(0xFF3B82F6),
-      const Color(0xFF2563EB),
-      const Color(0xFF9333EA),
-      const Color(0xFFEC4899),
-      const Color(0xFF6B7280),
-    ];
-    final icons = [
-      Icons.fitness_center,
-      Icons.local_fire_department,
-      Icons.sports_gymnastics,
-      Icons.self_improvement,
-      Icons.apps,
-      Icons.flash_on,
-      Icons.favorite,
-      Icons.star,
-    ];
-
     final routineName = routine['name'] ?? 'Routine';
-    final colorIndex = routineName.hashCode.abs() % colors.length;
-    final iconIndex = (routineName.hashCode.abs() ~/ 10) % icons.length;
+    final displayColor = RoutineAppearance.getColor(
+      routine['color'],
+      routineName,
+    );
+    final displayIcon = RoutineAppearance.getIcon(routine['icon'], routineName);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -58,10 +40,10 @@ class RoutineCard extends StatelessWidget {
           width: 48,
           height: 48,
           decoration: BoxDecoration(
-            color: colors[colorIndex],
+            color: displayColor,
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icons[iconIndex], color: Colors.white, size: 28),
+          child: Icon(displayIcon, color: Colors.white, size: 28),
         ),
         title: Text(
           routineName,

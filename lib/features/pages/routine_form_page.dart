@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:today_i_lift/shared/constants/routine_appearance.dart';
 import 'package:today_i_lift/shared/widgets/gradient_app_bar.dart';
 import '../repositories/routine_repository.dart';
 import '../repositories/routine_item_repository.dart';
@@ -57,6 +58,26 @@ class _RoutineFormPageState extends State<RoutineFormPage> {
 
     if (_isEdit) {
       _nameCtrl.text = widget.routine!['name'];
+      final displayColor = RoutineAppearance.getColor(
+        widget.routine!['color'],
+        widget.routine!['name'],
+      );
+
+      final displayIcon = RoutineAppearance.getIcon(
+        widget.routine!['icon'],
+        widget.routine!['name'],
+      );
+
+      final colorIndex = RoutineAppearance.colors.indexOf(displayColor);
+      if (colorIndex != -1) {
+        _selectedColorIndex = colorIndex;
+      }
+
+      final iconIndex = RoutineAppearance.icons.indexOf(displayIcon);
+      if (iconIndex != -1) {
+        _selectedIconIndex = iconIndex;
+      }
+
       _loadItems();
     }
   }
@@ -129,11 +150,20 @@ class _RoutineFormPageState extends State<RoutineFormPage> {
 
     if (_isEdit) {
       routineId = widget.routine!['id'];
+      await _routineRepo.updateRoutine(
+        routineId,
+        _nameCtrl.text.trim(),
+        _icons[_selectedIconIndex].codePoint,
+        _colors[_selectedColorIndex].toARGB32(),
+      );
     } else {
       routineId = await _routineRepo.createRoutineReturnId(
         _nameCtrl.text.trim(),
+        _icons[_selectedIconIndex].codePoint,
+        _colors[_selectedColorIndex].toARGB32(),
       );
     }
+
     final items = _items.asMap().entries.map((e) {
       final sets = e.value['sets'] as List? ?? [];
       return {
@@ -480,6 +510,7 @@ class _RoutineFormPageState extends State<RoutineFormPage> {
 
   Widget _buildEmptyExercises() {
     return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(32),
       decoration: BoxDecoration(
         border: Border.all(
