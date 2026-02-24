@@ -17,7 +17,7 @@ class _SignUpPageState extends State<SignUpPage> {
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  final _repo = AuthRepository(AuthService());
+  final _authService = AuthService();
 
   bool _loading = false;
   bool _agreedToTerms = false;
@@ -50,7 +50,7 @@ class _SignUpPageState extends State<SignUpPage> {
     });
 
     try {
-      await _repo.signUp(email, password);
+      await _authService.signUp(email, password);
 
       if (!mounted) return;
 
@@ -92,10 +92,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 const Text(
                   'กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: Color(0xFF6B7280),
-                  ),
+                  style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                 ),
                 const SizedBox(height: 24),
                 SizedBox(
@@ -143,10 +140,7 @@ class _SignUpPageState extends State<SignUpPage> {
         backgroundColor: Colors.white,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(
-            Icons.arrow_back,
-            color: Color(0xFF1F2937),
-          ),
+          icon: const Icon(Icons.arrow_back, color: Color(0xFF1F2937)),
           onPressed: () => Navigator.pop(context),
         ),
       ),
@@ -196,10 +190,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                   const Text(
                     'เริ่มต้นเส้นทางสู่สุขภาพที่ดีขึ้น',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFF6B7280),
-                    ),
+                    style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                   ),
 
                   const SizedBox(height: 40),
@@ -512,7 +503,9 @@ class _SignUpPageState extends State<SignUpPage> {
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF8551),
                         foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(0xFFFF8551).withOpacity(0.6),
+                        disabledBackgroundColor: const Color(
+                          0xFFFF8551,
+                        ).withOpacity(0.6),
                         elevation: 0,
                         shadowColor: Colors.transparent,
                         shape: RoundedRectangleBorder(

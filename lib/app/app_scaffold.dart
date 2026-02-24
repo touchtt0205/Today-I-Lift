@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:today_i_lift/shared/widgets/bottom_nav_bar.dart';
+import 'package:today_i_lift/shared/widgets/workout_modal.dart';
 import 'package:today_i_lift/features/pages/home_page.dart';
-import 'package:today_i_lift/features/pages/play_page.dart';
+// import 'package:today_i_lift/features/pages/workout_page.dart';
+// import 'package:today_i_lift/features/pages/play_page.dart';
 import 'package:today_i_lift/features/pages/profile_page.dart';
 import 'package:today_i_lift/features/pages/calendar_page.dart';
 import 'package:today_i_lift/features/pages/routine_list_page.dart';
@@ -19,12 +21,24 @@ class _AppScaffoldState extends State<AppScaffold> {
   final List<Widget> _pages = const [
     HomePage(),
     RoutineListPage(),
-    PlayPage(),
+    SizedBox(),
     CalendarPage(),
     ProfilePage(),
   ];
 
+  void _showWorkoutModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const WorkoutModal(),
+    );
+  }
+
   void _onTap(int index) {
+    if (index == 2) {
+      _showWorkoutModal();
+      return; // ไม่ต้องเปลี่ยนหน้า
+    }
     setState(() {
       _currentIndex = index;
     });
