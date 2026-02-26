@@ -9,6 +9,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
   final bool showCloseButton;
   final Widget? bottomContent;
   final double bottomHeight;
+  final VoidCallback? onClose;
 
   const GradientAppBar({
     super.key,
@@ -19,6 +20,7 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.showCloseButton = false,
     this.bottomContent,
     this.bottomHeight = 0,
+    this.onClose,
   });
 
   @override
@@ -88,7 +90,9 @@ class GradientAppBar extends StatelessWidget implements PreferredSizeWidget {
                       if (showCloseButton)
                         IconButton(
                           icon: const Icon(Icons.close, color: Colors.white),
-                          onPressed: () => Navigator.of(context).maybePop(),
+                          // onPressed: () => Navigator.of(context).maybePop(),
+                          onPressed:
+                              onClose ?? () => Navigator.of(context).maybePop(),
                         ),
                     ],
                   ),
