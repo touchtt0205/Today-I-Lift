@@ -10,11 +10,13 @@ import 'package:today_i_lift/shared/widgets/exercise_card.dart';
 class ActiveWorkoutScreen extends StatefulWidget {
   final Workout workout;
   final String sessionId;
+  final DateTime sessionStartedAt;
 
   const ActiveWorkoutScreen({
     super.key,
     required this.workout,
     required this.sessionId,
+    required this.sessionStartedAt,
   });
 
   @override
@@ -23,6 +25,15 @@ class ActiveWorkoutScreen extends StatefulWidget {
 
 class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   final _workoutService = WorkoutService();
+  final Map<int, int> _completedSetsPerExercise = {};
+  final Map<int, int> _restSecondsPerExercise = {};
+
+  int get _totalCompletedSets =>
+      _completedSetsPerExercise.values.fold(0, (a, b) => a + b);
+
+  int get _completedExercises => _completedSetsPerExercise.entries
+      .where((e) => e.value >= exercises[e.key].sets)
+      .length;
 
   List<WorkoutExercise> exercises = [];
   bool loading = true;
@@ -36,7 +47,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   void initState() {
     super.initState();
 
-    _startTime = DateTime.now();
+    _startTime = widget.sessionStartedAt.toLocal();
 
     _ticker = Ticker((_) {
       setState(() {
@@ -55,9 +66,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
 
   Future<void> _loadExercises() async {
     debugPrint('LOAD EXERCISES START');
-    exercises = await _workoutService.getExercisesForWorkout(
-      widget.workout.id,
-    );
+    exercises = await _workoutService.getExercisesForWorkout(widget.workout.id);
 
     for (final e in exercises) {
       debugPrint(
@@ -65,7 +74,36 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       );
     }
 
+    if (!mounted) return;
+
     setState(() => loading = false);
+  }
+
+  Future<void> _confirmCancel() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ยกเลิก Workout?'),
+        content: const Text('ข้อมูลที่บันทึกไปแล้วจะถูกลบทั้งหมด'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('ออกกำลังกายต่อ'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('ยกเลิก Workout'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      await _workoutService.cancelWorkout(widget.sessionId);
+      if (!mounted) return;
+      Navigator.of(context).pop();
+    }
   }
 
   String get _timeLabel {
@@ -82,7 +120,12 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(
-        builder: (_) => WorkoutSummaryScreen(durationSeconds: duration),
+        builder: (_) => WorkoutSummaryScreen(
+          durationSeconds: duration,
+          totalSets: _totalCompletedSets,
+          completedExercises: _completedExercises,
+          totalExercises: exercises.length,
+        ),
       ),
     );
   }
@@ -96,6 +139,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         subtitle: 'In Progress',
         showDate: false,
         showCloseButton: true,
+        onClose: _confirmCancel,
       ),
       body: Column(
         children: [
@@ -108,8 +152,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   Widget _buildStatsSummary() {
-    final totalSets = exercises.fold<int>(0, (s, e) => s + e.sets);
-
     return Container(
       color: Colors.white,
       padding: const EdgeInsets.symmetric(vertical: 16),
@@ -117,8 +159,11 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _StatItem(_timeLabel, "TIME"),
-          _StatItem("$totalSets", "SETS"),
-          _StatItem("0/${exercises.length}", "EXERCISES"),
+          _StatItem("$_totalCompletedSets", "SETS"),
+          _StatItem(
+            "$_completedExercises/${exercises.length}",
+            "EXERCISES",
+          ),
         ],
       ),
     );
@@ -158,6 +203,35 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
           onToggle: () {
             setState(() {
               expandedIndex = expandedIndex == i ? -1 : i;
+            });
+          },
+          onSetCompleted: (setData, setNumber) async {
+            final setId = await _workoutService.completeSet(
+              sessionId: widget.sessionId,
+              exerciseId: ex.exerciseId,
+              setNumber: setNumber,
+              reps: int.tryParse(setData.reps) ?? 0,
+              weight: double.tryParse(setData.kg) ?? 0,
+              restSeconds:
+                  _restSecondsPerExercise[i] ?? 60,
+            );
+            setData.setId = setId; // เก็บ id กลับมาใช้ตอน edit/delete
+          },
+          onSetEdited: (setData) async {
+            if (setData.setId == null) return;
+            await _workoutService.editSet(
+              setId: setData.setId!,
+              reps: int.tryParse(setData.reps) ?? 0,
+              weight: double.tryParse(setData.kg) ?? 0,
+            );
+          },
+          onSetDeleted: (setData) async {
+            if (setData.setId == null) return;
+            await _workoutService.removeSet(setData.setId!);
+          },
+          onSetsChanged: (completedSets) {
+            setState(() {
+              _completedSetsPerExercise[i] = completedSets;
             });
           },
         );

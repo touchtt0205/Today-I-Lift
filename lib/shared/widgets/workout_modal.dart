@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:today_i_lift/features/model/workout.dart';
 import 'package:today_i_lift/features/pages/active_workout_page.dart';
 import 'package:today_i_lift/features/services/workout_service.dart';
+import 'package:today_i_lift/shared/widgets/routine_card.dart';
+import 'package:today_i_lift/features/repositories/routine_repository.dart';
+import 'package:today_i_lift/features/repositories/routine_item_repository.dart';
 
 class WorkoutModal extends StatefulWidget {
   const WorkoutModal({super.key});
@@ -12,12 +15,15 @@ class WorkoutModal extends StatefulWidget {
 
 class _WorkoutModalState extends State<WorkoutModal> {
   final _workoutService = WorkoutService();
-  late Future<List<Workout>> _future;
+  final _routineRepo = RoutineRepository(); 
+  final _itemRepo = RoutineItemRepository(); 
+
+  late Future<List<Map<String, dynamic>>> _future; 
 
   @override
   void initState() {
     super.initState();
-    _future = _workoutService.getWorkouts();
+    _future = _routineRepo.getRoutines();
   }
 
   @override
@@ -30,10 +36,9 @@ class _WorkoutModalState extends State<WorkoutModal> {
       ),
       child: Padding(
         padding: const EdgeInsets.all(20.0),
-        child: FutureBuilder<List<Workout>>(
+        child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _future,
           builder: (context, snapshot) {
-            // loading
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const SizedBox(
                 height: 150,
@@ -41,15 +46,14 @@ class _WorkoutModalState extends State<WorkoutModal> {
               );
             }
 
-            // error
             if (snapshot.hasError) {
               return const SizedBox(
                 height: 150,
-                child: Center(child: Text('โหลด workout ไม่สำเร็จ')),
+                child: Center(child: Text('โหลด routine ไม่สำเร็จ')),
               );
             }
 
-            final workouts = snapshot.data!;
+            final routines = snapshot.data!;
 
             return Column(
               mainAxisSize: MainAxisSize.min,
@@ -65,10 +69,9 @@ class _WorkoutModalState extends State<WorkoutModal> {
                 ),
                 const SizedBox(height: 20),
 
-                ...workouts.map((w) => _item(w)),
+                ...routines.map((r) => _buildRoutineItem(r)),
 
                 const SizedBox(height: 10),
-
                 Center(
                   child: TextButton(
                     onPressed: () => Navigator.pop(context),
@@ -90,43 +93,47 @@ class _WorkoutModalState extends State<WorkoutModal> {
     );
   }
 
-  Widget _item(Workout w) {
-    w.createdAt.toLocal();
+  Widget _buildRoutineItem(Map<String, dynamic> routine) {
+    return FutureBuilder(
+      future: _itemRepo.getItems(routine['id']),
+      builder: (context, snapshot) {
+        final exerciseCount = snapshot.hasData
+            ? (snapshot.data as List).length
+            : 0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.black12),
-      ),
-      child: ListTile(
-        leading: const Icon(Icons.fitness_center),
-        title: Text(
-          w.name,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        return RoutineCard(
+          routine: routine, // ส่ง Map ทั้งก้อน
+          exerciseCount: exerciseCount,
+          onTap: () => _startWorkout(routine), //ส่ง routine Map
+        );
+      },
+    );
+  }
+
+  Future<void> _startWorkout(Map<String, dynamic> routine) async {
+    final session = await _workoutService.startOrResumeWorkout(routine['id']);
+
+    if (!mounted) return;
+
+    Navigator.pop(context);
+
+    await Future.delayed(const Duration(milliseconds: 200));
+
+    if (!mounted) return;
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ActiveWorkoutScreen(
+          workout: Workout(
+            id: routine['id'],
+            name: routine['name'] ?? '',
+            exerciseCount: 0,
+            createdAt: DateTime.now(),
+          ),
+          sessionId: session['id'],
+          sessionStartedAt: DateTime.parse(session['started_at']),
         ),
-        subtitle: Text('${w.exerciseCount} exercises'),
-        trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-        onTap: () async {
-          final sessionId = await _workoutService.startWorkout(w.id);
-
-          if (!mounted) return;
-
-          Navigator.pop(context); // ปิด modal ก่อน
-
-          await Future.delayed(const Duration(milliseconds: 200));
-
-          if (!mounted) return;
-
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) =>
-                  ActiveWorkoutScreen(workout: w, sessionId: sessionId),
-            ),
-          );
-        },
       ),
     );
   }
