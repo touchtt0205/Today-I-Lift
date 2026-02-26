@@ -28,16 +28,46 @@ class WorkoutRepository {
     return List<Map<String, dynamic>>.from(data);
   }
 
-  Future<Map<String, dynamic>?> fetchLastSession(String routineId) async {
-    final data = await _supabase
+  Future<Map<String, dynamic>?> fetchLastCompletedSession(
+    String routineId,
+  ) async {
+    return await _supabase
         .from('workout_sessions')
         .select()
         .eq('routine_id', routineId)
-        .order('started_at', ascending: false)
+        .eq('status', 'completed') // เฉพาะที่จบแล้ว
+        .order('finished_at', ascending: false)
         .limit(1)
         .maybeSingle();
+  }
 
-    return data;
+  Future<Map<String, dynamic>> startOrResumeWorkout(String routineId) async {
+    final userId = _supabase.auth.currentUser!.id;
+
+    final existing = await _supabase
+        .from('workout_sessions')
+        .select('id, started_at')
+        .eq('user_id', userId)
+        .eq('routine_id', routineId)
+        .eq('status', 'active')
+        .maybeSingle();
+
+    if (existing != null) return existing; // resume → return id + started_at
+
+    final res = await _supabase
+        .from('workout_sessions')
+        .insert({'user_id': userId, 'routine_id': routineId})
+        .select('id, started_at')
+        .single();
+
+    return res;
+  }
+
+  Future<void> cancelSession(String sessionId) async {
+    await _supabase
+        .from('workout_sessions')
+        .update({'status': 'cancelled'})
+        .eq('id', sessionId);
   }
 
   Future<List<Map<String, dynamic>>> fetchWorkoutSets(String sessionId) async {
@@ -48,50 +78,6 @@ class WorkoutRepository {
         .order('order_index');
 
     return List<Map<String, dynamic>>.from(data);
-  }
-
-  Future<String> startWorkout(String routineId) async {
-    final userId = _supabase.auth.currentUser!.id;
-
-    final res = await _supabase
-        .from('workout_sessions')
-        .insert({'user_id': userId, 'routine_id': routineId})
-        .select()
-        .single();
-
-    return res['id'];
-  }
-
-  Future<Map<String, dynamic>?> getActiveSession() async {
-    final userId = _supabase.auth.currentUser!.id;
-
-    final res = await _supabase
-        .from('workout_sessions')
-        .select('id, routine_id')
-        .eq('user_id', userId)
-        .eq('status', 'active')
-        .maybeSingle();
-
-    return res;
-  }
-
-  Future<String> startOrResumeWorkout(String routineId) async {
-    final userId = _supabase.auth.currentUser!.id;
-
-    final existing = await getActiveSession();
-    if (existing != null) return existing['id'];
-
-    final res = await _supabase
-        .from('workout_sessions')
-        .insert({
-          'user_id': userId,
-          'routine_id': routineId,
-          'status': 'active',
-        })
-        .select()
-        .single();
-
-    return res['id'];
   }
 
   Future<int> finishWorkout(String sessionId) async {
@@ -116,45 +102,6 @@ class WorkoutRepository {
 
     return duration;
   }
-
-  // Future<void> insertWorkoutSet({
-  //   required String sessionId,
-  //   required String exerciseId,
-  //   required int setNumber,
-  //   required int reps,
-  //   required double weight,
-  //   required int restSeconds,
-  // }) async {
-  //   await _supabase.from('workout_sets').insert({
-  //     'session_id': sessionId,
-  //     'exercise_id': exerciseId,
-  //     'set_number': setNumber,
-  //     'reps': reps,
-  //     'weight': weight,
-  //     'rest_seconds': restSeconds,
-  //   });
-  // }
-
-  // Future<Map<String, dynamic>?> getLastSet(String exerciseId) async {
-  //   return await _supabase
-  //       .from('workout_sets')
-  //       .select()
-  //       .eq('exercise_id', exerciseId)
-  //       .order('completed_at', ascending: false)
-  //       .limit(1)
-  //       .maybeSingle();
-  // }
-
-  // Future<List<Map<String, dynamic>>> fetchInitialExercises(
-  //   String routineId,
-  // ) async {
-  //   final data = await _supabase.rpc(
-  //     'get_initial_exercises_for_session',
-  //     params: {'routine_id_input': routineId},
-  //   );
-
-  //   return List<Map<String, dynamic>>.from(data);
-  // }
 
   // ================= SET =================
 

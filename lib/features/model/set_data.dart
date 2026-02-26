@@ -3,12 +3,14 @@ class SetData {
   String kg;
   String reps;
   bool done;
+  String? setId;
 
   SetData({
     required this.prev,
     required this.kg,
     required this.reps,
     this.done = false,
+    this.setId,
   });
 
   SetData copy() {

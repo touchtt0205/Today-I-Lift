@@ -7,6 +7,11 @@ class ExerciseCard extends StatefulWidget {
   final List<SetData> initialSets;
   final bool isExpanded;
   final VoidCallback? onToggle;
+  final Future<void> Function(SetData set, int setNumber)? onSetCompleted;
+  final Future<void> Function(SetData set)? onSetEdited; 
+  final Future<void> Function(SetData set)? onSetDeleted; 
+  final void Function(int completedSets)? onSetsChanged; 
+  final void Function(int restSeconds)? onRestSecondsChanged;
 
   const ExerciseCard({
     super.key,
@@ -15,6 +20,11 @@ class ExerciseCard extends StatefulWidget {
     required this.initialSets,
     this.isExpanded = false,
     this.onToggle,
+    this.onSetCompleted,
+    this.onSetEdited,
+    this.onSetDeleted,
+    this.onSetsChanged, 
+    this.onRestSecondsChanged,
   });
 
   @override
@@ -23,7 +33,6 @@ class ExerciseCard extends StatefulWidget {
 
 class _ExerciseCardState extends State<ExerciseCard> {
   late List<SetData> _sets;
-
   int _restSeconds = 60;
 
   String get _restLabel {
@@ -35,10 +44,15 @@ class _ExerciseCardState extends State<ExerciseCard> {
   @override
   void initState() {
     super.initState();
-
     _sets = widget.initialSets
         .map((e) => SetData(prev: e.prev, kg: e.kg, reps: e.reps, done: e.done))
         .toList();
+  }
+
+  @override
+  void dispose() {
+    for (final s in _sets) s.dispose();
+    super.dispose();
   }
 
   Future<void> _pickRestTime() async {
@@ -46,14 +60,12 @@ class _ExerciseCardState extends State<ExerciseCard> {
       context: context,
       builder: (_) {
         final options = [30, 45, 60, 90, 120, 180];
-
         return SafeArea(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: options.map((sec) {
               final m = (sec ~/ 60).toString().padLeft(2, '0');
               final s = (sec % 60).toString().padLeft(2, '0');
-
               return ListTile(
                 title: Text('$m:$s'),
                 onTap: () => Navigator.pop(context, sec),
@@ -63,31 +75,47 @@ class _ExerciseCardState extends State<ExerciseCard> {
         );
       },
     );
-
     if (result != null) {
       setState(() => _restSeconds = result);
+      widget.onRestSecondsChanged?.call(result); 
     }
   }
 
-  void _toggleDone(int index) async {
-    setState(() {
-      _sets[index].done = !_sets[index].done;
-    });
+  void _notifyParent() {
+    final completed = _sets.where((s) => s.done).length;
+    widget.onSetsChanged?.call(completed);
+  }
 
-    if (_sets[index].done) {
+  void _toggleDone(int index) async {
+    final set = _sets[index];
+    final newDone = !set.done;
+
+    setState(() => set.done = newDone);
+
+    if (newDone) {
+      // tick → INSERT
+      await widget.onSetCompleted?.call(set, index + 1);
+
+      if (!mounted) return;
       await showRestTimerPopup(
         context,
         initialSeconds: _restSeconds,
         onSkip: () {},
       );
+    } else {
+      // untick → DELETE
+      if (set.setId != null) {
+        await widget.onSetDeleted?.call(set);
+        set.setId = null; // clear setId
+      }
     }
+
+    _notifyParent();
   }
 
   void _addSet() {
     if (_sets.isEmpty) return;
-
     final last = _sets.last;
-
     setState(() {
       _sets.add(
         SetData(
@@ -98,14 +126,20 @@ class _ExerciseCardState extends State<ExerciseCard> {
         ),
       );
     });
+
+    _notifyParent();
   }
 
   void _deleteSet(int index) {
-    if (_sets.length <= 1) return; // ป้องกันการลบเซ็ตสุดท้าย
+    if (_sets.length <= 1) return;
+    final set = _sets[index];
+    setState(() => _sets.removeAt(index));
+    // ถ้า done แล้ว → DELETE ใน DB ด้วย
+    if (set.done && set.setId != null) {
+      widget.onSetDeleted?.call(set);
+    }
 
-    setState(() {
-      _sets.removeAt(index);
-    });
+    _notifyParent();
   }
 
   @override
@@ -176,7 +210,6 @@ class _ExerciseCardState extends State<ExerciseCard> {
                 ],
               ),
             ),
-
             Icon(
               widget.isExpanded ? Icons.arrow_drop_up : Icons.arrow_drop_down,
               color: widget.isExpanded ? Colors.orangeAccent : Colors.grey,
@@ -290,7 +323,6 @@ class _ExerciseCardState extends State<ExerciseCard> {
         child: const Icon(Icons.delete_outline, color: Colors.white, size: 24),
       ),
       confirmDismiss: (_) async {
-        // ป้องกันการลบเซ็ตสุดท้าย
         if (_sets.length <= 1) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -311,43 +343,43 @@ class _ExerciseCardState extends State<ExerciseCard> {
           ),
         );
       },
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 4),
-            child: Row(
-              children: [
-                SizedBox(
-                  width: 25,
-                  child: Text(
-                    '${index + 1}',
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                Expanded(child: _buildInputBox(set.prev, isGhost: true)),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildEditableBox(
-                    set.kg,
-                    (v) => setState(() => set.kg = v),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildEditableBox(
-                    set.reps,
-                    (v) => setState(() => set.reps = v),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                GestureDetector(
-                  onTap: () => _toggleDone(index),
-                  child: _buildCheckSquare(set.done),
-                ),
-              ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 25,
+              child: Text(
+                '${index + 1}',
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-        ],
+            Expanded(child: _buildInputBox(set.prev, isGhost: true)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildEditableBox(set.kgController, (v) {
+                setState(() => set.kg = v);
+                if (set.done && set.setId != null) {
+                  widget.onSetEdited?.call(set); // update ถ้า done แล้ว
+                }
+              }),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _buildEditableBox(set.repsController, (v) {
+                setState(() => set.reps = v);
+                if (set.done && set.setId != null) {
+                  widget.onSetEdited?.call(set); // update ถ้า done แล้ว
+                }
+              }),
+            ),
+            const SizedBox(width: 8),
+            GestureDetector(
+              onTap: () => _toggleDone(index),
+              child: _buildCheckSquare(set.done),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -372,7 +404,10 @@ class _ExerciseCardState extends State<ExerciseCard> {
     );
   }
 
-  Widget _buildEditableBox(String value, ValueChanged<String> onChanged) {
+  Widget _buildEditableBox(
+    TextEditingController controller,
+    ValueChanged<String> onChanged,
+  ) {
     return Container(
       height: 35,
       padding: const EdgeInsets.symmetric(horizontal: 6),
@@ -382,8 +417,7 @@ class _ExerciseCardState extends State<ExerciseCard> {
         borderRadius: BorderRadius.circular(6),
       ),
       child: TextField(
-        controller: TextEditingController(text: value)
-          ..selection = TextSelection.collapsed(offset: value.length),
+        controller: controller,
         onChanged: onChanged,
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
@@ -421,10 +455,7 @@ class _ExerciseCardState extends State<ExerciseCard> {
         decoration: BoxDecoration(
           color: Colors.grey[100],
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: Colors.grey[300]!,
-            style: BorderStyle.solid,
-          ),
+          border: Border.all(color: Colors.grey[300]!),
         ),
         child: const Center(
           child: Text(
@@ -437,16 +468,29 @@ class _ExerciseCardState extends State<ExerciseCard> {
   }
 }
 
+//ui state
 class SetData {
   String prev;
   String kg;
   String reps;
   bool done;
+  String? setId;
+  late final TextEditingController kgController;
+  late final TextEditingController repsController;
 
   SetData({
     required this.prev,
     required this.kg,
     required this.reps,
     this.done = false,
-  });
+    this.setId,
+  }) {
+    kgController = TextEditingController(text: kg);
+    repsController = TextEditingController(text: reps);
+  }
+
+  void dispose() {
+    kgController.dispose();
+    repsController.dispose();
+  }
 }
