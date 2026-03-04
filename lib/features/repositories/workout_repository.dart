@@ -21,7 +21,7 @@ class WorkoutRepository {
   ) async {
     final data = await _supabase
         .from('routine_items')
-        .select('*, exercises(name)')
+        .select('*, exercises(name , muscle_group)')
         .eq('routine_id', routineId)
         .order('order_index');
 
