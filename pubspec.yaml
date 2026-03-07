@@ -39,6 +39,9 @@ dependencies:
   flutter_dotenv: ^6.0.0
   flutter_heatmap_calendar: ^1.0.5
   fl_chart: ^0.70.0
+  package_info_plus: ^9.0.0
+  flutter_launcher_icons: ^0.14.1
+
   
 
 dev_dependencies:
@@ -55,6 +58,13 @@ dev_dependencies:
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
 
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  adaptive_icon_background: "#ef4444" 
+  image_path: "assets/logo-screen.png"
+
 # The following section is specific to Flutter packages.
 flutter:
 
@@ -66,6 +76,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
       - .env
+      - assets/logo.png
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 

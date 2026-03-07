@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../repositories/auth_repository.dart';
 import '../services/auth_service.dart';
 import './sign_up_page.dart';
 
@@ -43,8 +42,8 @@ class _LoginPageState extends State<LoginPage> {
       );
     } catch (_) {
       setState(
-        () =>
-            _errorMessage = 'เข้าสู่ระบบไม่สำเร็จ กรุณาตรวจสอบอีเมลและรหัสผ่าน',
+        () => _errorMessage =
+            'Login failed. Please check your email and password.',
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -60,7 +59,9 @@ class _LoginPageState extends State<LoginPage> {
     try {
       await _authService.loginWithGoogle();
     } catch (_) {
-      setState(() => _errorMessage = 'ไม่สามารถเข้าสู่ระบบด้วย Google ได้');
+      setState(
+        () => _errorMessage = 'Google sign-in failed. Please try again.',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -81,10 +82,9 @@ class _LoginPageState extends State<LoginPage> {
                 children: [
                   const SizedBox(height: 60),
 
-                  // Logo/Icon Section
                   Container(
-                    height: 80,
-                    width: 80,
+                    height: 100,
+                    width: 100,
                     decoration: BoxDecoration(
                       gradient: const LinearGradient(
                         colors: [Color(0xFFFF8551), Color(0xFFEF4444)],
@@ -93,10 +93,12 @@ class _LoginPageState extends State<LoginPage> {
                       ),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(
-                      Icons.fitness_center,
-                      size: 40,
-                      color: Colors.white,
+                    child: Center(
+                      child: Image.asset(
+                        'assets/logo.png',
+                        width: 50,
+                        height: 50,
+                      ),
                     ),
                   ),
 
@@ -104,7 +106,7 @@ class _LoginPageState extends State<LoginPage> {
 
                   // Title
                   const Text(
-                    'ยินดีต้อนรับกลับ',
+                    'Welcome Back',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -115,7 +117,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 8),
 
                   const Text(
-                    'เข้าสู่ระบบเพื่อเริ่มออกกำลังกาย',
+                    'Log in to start your workout',
                     style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                   ),
 
@@ -160,7 +162,7 @@ class _LoginPageState extends State<LoginPage> {
                     keyboardType: TextInputType.emailAddress,
                     style: const TextStyle(fontSize: 16),
                     decoration: InputDecoration(
-                      labelText: 'อีเมล',
+                      labelText: 'Email',
                       hintText: 'example@email.com',
                       prefixIcon: const Icon(Icons.email_outlined),
                       filled: true,
@@ -200,10 +202,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'กรุณากรอกอีเมล';
+                        return 'Please enter your email';
                       }
                       if (!v.contains('@') || !v.contains('.')) {
-                        return 'รูปแบบอีเมลไม่ถูกต้อง';
+                        return 'Invalid email format';
                       }
                       return null;
                     },
@@ -217,7 +219,7 @@ class _LoginPageState extends State<LoginPage> {
                     obscureText: _obscurePassword,
                     style: const TextStyle(fontSize: 16),
                     decoration: InputDecoration(
-                      labelText: 'รหัสผ่าน',
+                      labelText: 'Password',
                       hintText: '••••••••',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
@@ -269,10 +271,10 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                     validator: (v) {
                       if (v == null || v.isEmpty) {
-                        return 'กรุณากรอกรหัสผ่าน';
+                        return 'Please enter your password';
                       }
                       if (v.length < 6) {
-                        return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+                        return 'Password must be at least 6 characters';
                       }
                       return null;
                     },
@@ -281,68 +283,71 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 12),
 
                   // Forgot Password
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: _isLoading
-                          ? null
-                          : () {
-                              // Navigate to forgot password
-                            },
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                      ),
-                      child: const Text(
-                        'ลืมรหัสผ่าน?',
-                        style: TextStyle(
-                          color: Color(0xFFFF8551),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ),
+                  // Align(
+                  //   alignment: Alignment.centerRight,
+                  //   child: TextButton(
+                  //     onPressed: _isLoading
+                  //         ? null
+                  //         : () {
+                  //             // Navigate to forgot password
+                  //           },
+                  //     style: TextButton.styleFrom(
+                  //       padding: const EdgeInsets.symmetric(
+                  //         horizontal: 8,
+                  //         vertical: 4,
+                  //       ),
+                  //     ),
+                  //     child: const Text(
+                  //       'Forgot password?',
+                  //       style: TextStyle(
+                  //         color: Color(0xFFFF8551),
+                  //         fontSize: 14,
+                  //         fontWeight: FontWeight.w600,
+                  //       ),
+                  //     ),
+                  //   ),
+                  // ),
 
                   const SizedBox(height: 24),
 
                   // Login Button
                   SizedBox(
                     height: 56,
-                    child: ElevatedButton(
-                      onPressed: _isLoading ? null : login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF8551),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(
-                          0xFFFF8551,
-                        ).withOpacity(0.6),
-                        elevation: 0,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
+                    width: double.infinity,
+                    child: InkWell(
+                      onTap: _isLoading ? null : login,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF8551), Color(0xFFEF4444)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                        child: Center(
+                          child: _isLoading
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  'Log In',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                            )
-                          : const Text(
-                              'เข้าสู่ระบบ',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                        ),
+                      ),
                     ),
                   ),
 
@@ -360,7 +365,7 @@ class _LoginPageState extends State<LoginPage> {
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
-                          'หรือ',
+                          'or',
                           style: TextStyle(
                             color: Color(0xFF6B7280),
                             fontSize: 14,
@@ -396,7 +401,7 @@ class _LoginPageState extends State<LoginPage> {
                         },
                       ),
                       label: const Text(
-                        'เข้าสู่ระบบด้วย Google',
+                        'Continue with Google',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w600,
@@ -423,7 +428,7 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
-                        'ยังไม่มีบัญชี? ',
+                        "Don't have an account? ",
                         style: TextStyle(
                           color: Color(0xFF6B7280),
                           fontSize: 14,
@@ -449,7 +454,7 @@ class _LoginPageState extends State<LoginPage> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: const Text(
-                          'สมัครสมาชิก',
+                          'Sign Up',
                           style: TextStyle(
                             color: Color(0xFFFF8551),
                             fontSize: 14,

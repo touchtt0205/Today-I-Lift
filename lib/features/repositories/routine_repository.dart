@@ -46,4 +46,9 @@ class RoutineRepository {
         })
         .eq('id', id);
   }
+
+  Future<List<Map<String, dynamic>>> getAllExercises() async {
+    final res = await _client.from('exercises').select();
+    return List<Map<String, dynamic>>.from(res);
+  }
 }
