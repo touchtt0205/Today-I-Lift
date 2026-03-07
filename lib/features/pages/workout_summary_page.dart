@@ -59,17 +59,14 @@ class WorkoutSummaryScreen extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'ออกกำลังกายเสร็จแล้ว ไปพักได้เลย 💪',
+                'Exercise regularly and then you can take a break! 💪',
                 style: TextStyle(fontSize: 14, color: Colors.grey[600]),
               ),
               const SizedBox(height: 40),
 
               // Stats card
               Container(
-                padding: const EdgeInsets.symmetric(
-                  vertical: 24,
-                  horizontal: 16,
-                ),
+                padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -175,7 +172,10 @@ class _StatBox extends StatelessWidget {
           style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 4),
-        Text(label, style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+        Text(
+          label,
+          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        ),
       ],
     );
   }
@@ -184,6 +184,10 @@ class _StatBox extends StatelessWidget {
 class _Divider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Container(width: 1, height: 60, color: Colors.grey[200]);
+    return Container(
+      width: 1,
+      height: 60,
+      color: Colors.grey[200],
+    );
   }
 }

@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class WorkoutRepository {
@@ -21,11 +20,20 @@ class WorkoutRepository {
   ) async {
     final data = await _supabase
         .from('routine_items')
-        .select('*, exercises(name , muscle_group)')
+        .select('*, exercises(name, muscle_group), routine_set_templates(*)')
         .eq('routine_id', routineId)
         .order('order_index');
 
-    return List<Map<String, dynamic>>.from(data);
+    // sort set templates ตาม set_number
+    final result = List<Map<String, dynamic>>.from(data);
+    for (final item in result) {
+      final templates = item['routine_set_templates'] as List? ?? [];
+      templates.sort(
+        (a, b) => (a['set_number'] as int).compareTo(b['set_number'] as int),
+      );
+    }
+
+    return result;
   }
 
   Future<Map<String, dynamic>?> fetchLastCompletedSession(
@@ -52,7 +60,7 @@ class WorkoutRepository {
         .eq('status', 'active')
         .maybeSingle();
 
-    if (existing != null) return existing; // resume → return id + started_at
+    if (existing != null) return existing;
 
     final res = await _supabase
         .from('workout_sessions')

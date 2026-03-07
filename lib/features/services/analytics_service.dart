@@ -3,12 +3,10 @@ import 'package:today_i_lift/features/repositories/analytics_repository.dart';
 class AnalyticsService {
   final _repo = AnalyticsRepository();
 
-  /// วันที่มี workout (ใช้ highlight ใน Calendar)
   Future<List<DateTime>> getWorkoutDates() {
     return _repo.fetchWorkoutDates();
   }
 
-  /// Sessions ของวันที่เลือกใน Calendar
   Future<List<Map<String, dynamic>>> getSessionsByDate(DateTime date) {
     return _repo.fetchSessionsByDate(date);
   }
@@ -17,12 +15,10 @@ class AnalyticsService {
     return _repo.fetchDailyData();
   }
 
-  /// Streak ต่อสัปดาห์
   Future<int> getWeekStreak() {
     return _repo.fetchWeekStreak();
   }
 
-  /// Graph data
   Future<List<Map<String, dynamic>>> getGraphData({
     required String metric,
     required String range,
@@ -30,13 +26,27 @@ class AnalyticsService {
     return _repo.fetchGraphData(metric: metric, range: range);
   }
 
-  /// Muscle Distribution
   Future<Map<String, int>> getMuscleDistribution({String range = 'all'}) {
     return _repo.fetchMuscleDistribution(range: range);
   }
 
-  /// Personal Records
   Future<List<Map<String, dynamic>>> getPersonalRecords() {
     return _repo.fetchPersonalRecords();
+  }
+
+  Future<Map<String, dynamic>?> getLastWorkout() {
+    return _repo.fetchLastWorkout();
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentPRs() {
+    return _repo.getRecentPRs();
+  }
+
+  Future<int> getWorkoutsThisWeek() {
+    return _repo.fetchWorkoutsThisWeek();
+  }
+
+  Future<Map<String, DateTime>> getLastPlayedPerRoutine() {
+    return _repo.fetchLastPlayedPerRoutine();
   }
 }

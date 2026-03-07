@@ -47,7 +47,8 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   void initState() {
     super.initState();
 
-    _startTime = widget.sessionStartedAt.toLocal();
+    _startTime = DateTime.now();
+    ;
 
     _ticker = Ticker((_) {
       setState(() {
@@ -83,17 +84,38 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
     final confirm = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('ยกเลิก Workout?'),
-        content: const Text('ข้อมูลที่บันทึกไปแล้วจะถูกลบทั้งหมด'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded, color: Colors.red),
+            SizedBox(width: 8),
+            Text('Cancel Workout'),
+          ],
+        ),
+        content: const Text(
+          'Your workout progress will be lost.\nAre you sure you want to cancel?',
+          style: TextStyle(height: 1.4),
+        ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('ออกกำลังกายต่อ'),
+            style: TextButton.styleFrom(foregroundColor: Colors.grey[700]),
+            child: const Text(
+              'Continue Workout',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.of(ctx).pop(true),
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('ยกเลิก Workout'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            child: const Text('Cancel Workout'),
           ),
         ],
       ),
@@ -160,10 +182,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
         children: [
           _StatItem(_timeLabel, "TIME"),
           _StatItem("$_totalCompletedSets", "SETS"),
-          _StatItem(
-            "$_completedExercises/${exercises.length}",
-            "EXERCISES",
-          ),
+          _StatItem("$_completedExercises/${exercises.length}", "EXERCISES"),
         ],
       ),
     );
@@ -184,15 +203,49 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       itemBuilder: (context, i) {
         final ex = exercises[i];
 
+        // final initialSets = List.generate(
+        //   ex.sets,
+        //   (_) => SetData(
+        //     prev: ex.previousWeight != null
+        //         ? "${ex.previousWeight} x ${ex.previousReps}"
+        //         : "-",
+        //     kg: ex.weight.toInt().toString(),
+        //     reps: ex.reps.toString(),
+        //   ),
+        // );
         final initialSets = List.generate(
-          ex.sets,
-          (_) => SetData(
-            prev: ex.previousWeight != null
-                ? "${ex.previousWeight} x ${ex.previousReps}"
-                : "-",
-            kg: ex.weight.toInt().toString(),
-            reps: ex.reps.toString(),
-          ),
+          // ใช้จำนวน sets จาก template ถ้ามี ไม่งั้นใช้ ex.sets
+          ex.setTemplates.isNotEmpty ? ex.setTemplates.length : ex.sets,
+          (i) {
+            final prevSet = ex.previousSets.length > i
+                ? ex.previousSets[i]
+                : null;
+            final template = ex.setTemplates.length > i
+                ? ex.setTemplates[i]
+                : null;
+
+            // ถ้าเคยเล่นมาแล้ว → ใช้ค่าจาก previous sets
+            // ถ้ายังไม่เคยเล่น → ใช้ค่าจาก template
+            final kg = prevSet != null
+                ? (prevSet['weight'] as double).toInt().toString()
+                : template != null
+                ? (template['weight'] as double).toInt().toString()
+                : ex.weight.toInt().toString();
+
+            final reps = prevSet != null
+                ? prevSet['reps'].toString()
+                : template != null
+                ? template['reps'].toString()
+                : ex.reps.toString();
+
+            return SetData(
+              prev: prevSet != null
+                  ? "${prevSet['weight']} x ${prevSet['reps']}"
+                  : "-",
+              kg: kg,
+              reps: reps,
+            );
+          },
         );
 
         return ExerciseCard(
@@ -212,8 +265,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
               setNumber: setNumber,
               reps: int.tryParse(setData.reps) ?? 0,
               weight: double.tryParse(setData.kg) ?? 0,
-              restSeconds:
-                  _restSecondsPerExercise[i] ?? 60,
+              restSeconds: _restSecondsPerExercise[i] ?? 60,
             );
             setData.setId = setId; // เก็บ id กลับมาใช้ตอน edit/delete
           },

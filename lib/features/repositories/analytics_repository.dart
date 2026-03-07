@@ -307,4 +307,219 @@ class AnalyticsRepository {
 
     return result;
   }
+
+  // ใน AnalyticsRepository
+
+  /// Last completed session
+  // Future<Map<String, dynamic>?> fetchLastWorkout() async {
+  //   final data = await _supabase
+  //       .from('workout_sessions')
+  //       .select('*, routines(name, icon, color)')
+  //       .eq('user_id', _userId)
+  //       .eq('status', 'completed')
+  //       .order('finished_at', ascending: false)
+  //       .limit(1)
+  //       .maybeSingle();
+
+  //   return data;
+  // }
+
+  // /// Recent PRs — ท่าที่ทำ PR ใหม่ใน 7 วันล่าสุด
+  // Future<List<Map<String, dynamic>>> fetchRecentPRs() async {
+  //   final since = DateTime.now()
+  //       .subtract(const Duration(days: 7))
+  //       .toUtc()
+  //       .toIso8601String();
+
+  //   // ดึง sets ทั้งหมดใน 7 วัน
+  //   final recentSets = await _supabase
+  //       .from('workout_sets')
+  //       .select(
+  //         'weight, reps, completed_at, exercises(name, muscle_group), workout_sessions!inner(user_id, status)',
+  //       )
+  //       .eq('workout_sessions.user_id', _userId)
+  //       .eq('workout_sessions.status', 'completed')
+  //       .gte('completed_at', since)
+  //       .order('weight', ascending: false);
+
+  //   // ดึง all-time PR ต่อท่า
+  //   final allPRs = await fetchPersonalRecords();
+  //   final prMap = {for (final pr in allPRs) pr['name']: pr['weight']};
+
+  //   // กรองเฉพาะที่ weight เท่ากับ all-time PR (แปลว่าเพิ่งทำ PR)
+  //   final result = <String, Map<String, dynamic>>{};
+
+  //   for (final row in List<Map<String, dynamic>>.from(recentSets)) {
+  //     final name = row['exercises']?['name'] as String?;
+  //     if (name == null) continue;
+
+  //     final weight = (row['weight'] as num).toDouble();
+  //     final allTimePR = (prMap[name] as num?)?.toDouble();
+
+  //     if (allTimePR != null &&
+  //         weight >= allTimePR &&
+  //         !result.containsKey(name)) {
+  //       result[name] = {
+  //         'name': name,
+  //         'muscle_group': row['exercises']?['muscle_group'],
+  //         'weight': weight,
+  //         'reps': row['reps'],
+  //         'date': row['completed_at'],
+  //       };
+  //     }
+  //   }
+
+  //   return result.values.toList();
+  // }
+
+  /// จำนวน session สัปดาห์นี้
+  Future<int> fetchWorkoutsThisWeek() async {
+    final weekStart = _getWeekStart(DateTime.now()).toUtc().toIso8601String();
+
+    final data = await _supabase
+        .from('workout_sessions')
+        .select('id')
+        .eq('user_id', _userId)
+        .eq('status', 'completed')
+        .gte('started_at', weekStart);
+
+    return List<Map<String, dynamic>>.from(data).length;
+  }
+
+  /// Last workout + sets stats
+  Future<Map<String, dynamic>?> fetchLastWorkout() async {
+    final session = await _supabase
+        .from('workout_sessions')
+        .select('*, routines(name, icon, color)')
+        .eq('user_id', _userId)
+        .eq('status', 'completed')
+        .order('finished_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (session == null) return null;
+
+    // ดึง sets ของ session นั้น
+    final sets = await _supabase
+        .from('workout_sets')
+        .select('weight, reps, exercise_id')
+        .eq('session_id', session['id']);
+
+    final setList = List<Map<String, dynamic>>.from(sets);
+    final totalSets = setList.length;
+    final totalExercises = setList.map((s) => s['exercise_id']).toSet().length;
+    final totalVolume = setList.fold<double>(
+      0,
+      (sum, s) => sum + ((s['weight'] as num).toDouble() * (s['reps'] as int)),
+    );
+
+    return {
+      ...session,
+      'total_sets': totalSets,
+      'total_exercises': totalExercises,
+      'total_volume': totalVolume,
+    };
+  }
+
+  Future<List<Map<String, dynamic>>> getRecentPRs() async {
+    // ดึง session ล่าสุด
+    final lastSession = await _supabase
+        .from('workout_sessions')
+        .select('id, started_at')
+        .eq('user_id', _userId)
+        .eq('status', 'completed')
+        .order('started_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    if (lastSession == null) return [];
+
+    // ดึง session ก่อนหน้า (อันที่ 2)
+    final prevSession = await _supabase
+        .from('workout_sessions')
+        .select('id')
+        .eq('user_id', _userId)
+        .eq('status', 'completed')
+        .lt('started_at', lastSession['started_at'])
+        .order('started_at', ascending: false)
+        .limit(1)
+        .maybeSingle();
+
+    // sets ของ session ล่าสุด
+    final currentSets = await _supabase
+        .from('workout_sets')
+        .select('weight, reps, exercises(name, muscle_group)')
+        .eq('session_id', lastSession['id']);
+
+    // PR สูงสุดของ session ก่อนหน้า
+    final prevPRMap = <String, double>{};
+    if (prevSession != null) {
+      final prevSets = await _supabase
+          .from('workout_sets')
+          .select('weight, exercises(name)')
+          .eq('session_id', prevSession['id']);
+
+      for (final row in List<Map<String, dynamic>>.from(prevSets)) {
+        final name = row['exercises']?['name'] as String?;
+        if (name == null) continue;
+        final w = (row['weight'] as num).toDouble();
+        if (!prevPRMap.containsKey(name) || w > prevPRMap[name]!) {
+          prevPRMap[name] = w;
+        }
+      }
+    }
+
+    // max weight ของ session ล่าสุด ต่อท่า
+    final currentMax = <String, Map<String, dynamic>>{};
+    for (final row in List<Map<String, dynamic>>.from(currentSets)) {
+      final name = row['exercises']?['name'] as String?;
+      if (name == null) continue;
+      final w = (row['weight'] as num).toDouble();
+      if (!currentMax.containsKey(name) ||
+          w > (currentMax[name]!['weight'] as num).toDouble()) {
+        currentMax[name] = row;
+      }
+    }
+
+    // เปรียบเทียบ
+    final result = <Map<String, dynamic>>[];
+    currentMax.forEach((name, row) {
+      final weight = (row['weight'] as num).toDouble();
+      final prevPR = prevPRMap[name] ?? 0.0;
+
+      if (weight > prevPR) {
+        result.add({
+          'name': name,
+          'muscle_group': row['exercises']?['muscle_group'],
+          'weight': weight,
+          'reps': row['reps'],
+          'increase': prevPR == 0 ? weight : weight - prevPR,
+          'date': lastSession['started_at'],
+        });
+      }
+    });
+
+    return result;
+  }
+
+  /// Last played date ต่อ routine
+  Future<Map<String, DateTime>> fetchLastPlayedPerRoutine() async {
+    final data = await _supabase
+        .from('workout_sessions')
+        .select('routine_id, started_at')
+        .eq('user_id', _userId)
+        .eq('status', 'completed')
+        .order('started_at', ascending: false);
+
+    final result = <String, DateTime>{};
+
+    for (final row in List<Map<String, dynamic>>.from(data)) {
+      final routineId = row['routine_id'] as String;
+      if (!result.containsKey(routineId)) {
+        result[routineId] = DateTime.parse(row['started_at']).toLocal();
+      }
+    }
+
+    return result;
+  }
 }
