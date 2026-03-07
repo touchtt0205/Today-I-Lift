@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:today_i_lift/features/pages/routine_form_page.dart';
-import 'package:today_i_lift/features/repositories/routine_item_repository.dart';
 import 'package:today_i_lift/features/repositories/routine_repository.dart';
+import 'package:today_i_lift/features/services/analytics_service.dart';
 import 'package:today_i_lift/shared/widgets/gradient_app_bar.dart';
-import 'package:today_i_lift/shared/widgets/routine_card.dart';
-import 'package:today_i_lift/shared/widgets/stat_card.dart';
+import 'package:today_i_lift/shared/widgets/home_stats_cards.dart';
+import 'package:today_i_lift/shared/widgets/last_workout_card.dart'
+    show LastWorkoutCard;
+import 'package:today_i_lift/shared/widgets/recent_prs.dart';
+import 'package:today_i_lift/shared/widgets/routine_list.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,24 +17,44 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _routineRepo = RoutineRepository();
-  final _itemRepo = RoutineItemRepository();
-  late Future<List<Map<String, dynamic>>> _routinesFuture;
+  final _analyticsService = AnalyticsService();
+
+  List<Map<String, dynamic>> _routines = [];
+  int _weekStreak = 0;
+  int _workoutsThisWeek = 0;
+  Map<String, dynamic>? _lastWorkout;
+  List<Map<String, dynamic>> _recentPRs = [];
+  Map<String, DateTime> _lastPlayedPerRoutine = {};
+  bool _statsLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadRoutines();
+    _loadAll();
   }
 
-  void _loadRoutines() {
+  Future<void> _loadAll() async {
+    setState(() => _statsLoading = true);
+
+    final results = await Future.wait([
+      _routineRepo.getRoutines(),
+      _analyticsService.getWeekStreak(),
+      _analyticsService.getWorkoutsThisWeek(),
+      _analyticsService.getLastWorkout(),
+      _analyticsService.getRecentPRs(),
+      _analyticsService.getLastPlayedPerRoutine(),
+    ]);
+
+    if (!mounted) return;
     setState(() {
-      _routinesFuture = _routineRepo.getRoutines();
+      _routines = results[0] as List<Map<String, dynamic>>;
+      _weekStreak = results[1] as int;
+      _workoutsThisWeek = results[2] as int;
+      _lastWorkout = results[3] as Map<String, dynamic>?;
+      _recentPRs = results[4] as List<Map<String, dynamic>>;
+      _lastPlayedPerRoutine = results[5] as Map<String, DateTime>;
+      _statsLoading = false;
     });
-  }
-
-  Future<int> _getExerciseCount(String routineId) async {
-    final items = await _itemRepo.getItems(routineId);
-    return items.length;
   }
 
   @override
@@ -41,346 +63,34 @@ class _HomePageState extends State<HomePage> {
       appBar: GradientAppBar(
         title: 'Today I Lift',
         showDate: true,
-        bottomHeight: 130,
-        bottomContent: _buildStatsSection(),
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 24),
-
-            // Last Workout Section
-            _buildLastWorkoutSection(),
-
-            const SizedBox(height: 24),
-
-            // Recent PRs Section
-            _buildRecentPRsSection(),
-
-            const SizedBox(height: 24),
-
-            // My Routines Section
-            _buildMyRoutinesSection(),
-
-            const SizedBox(height: 24),
-          ],
+        bottomHeight: 120,
+        bottomContent: HomeStatsCards(
+          weekStreak: _weekStreak,
+          workoutsThisWeek: _workoutsThisWeek,
+          newPRs: _recentPRs.length,
         ),
       ),
-    );
-  }
-
-  Widget _buildStatsSection() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          Expanded(
-            child: StatCard(
-              icon: '🔥',
-              label: 'Streak',
-              value: '5',
-              sublabel: 'days',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: StatCard(
-              icon: '📅',
-              label: 'This Week',
-              value: '6',
-              sublabel: 'workouts',
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: StatCard(
-              icon: '💪',
-              label: 'New PRs',
-              value: '5',
-              sublabel: '',
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLastWorkoutSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Last Workout',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.05),
-                  blurRadius: 10,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                Row(
-                  children: [
-                    const Text('🦵', style: TextStyle(fontSize: 24)),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Leg Day',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          Text(
-                            'Yesterday, 6:30 PM',
-                            style: TextStyle(fontSize: 12, color: Colors.grey),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Text(
-                      '85 m',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF9333EA),
-                      ),
-                    ),
-                    const SizedBox(width: 4),
-                    const Text(
-                      'Duration',
-                      style: TextStyle(fontSize: 11, color: Colors.grey),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(child: _buildWorkoutStat('5', 'exercises')),
-                    Expanded(child: _buildWorkoutStat('20', 'Sets')),
-                    Expanded(child: _buildWorkoutStat('2.1T', 'Volume')),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF9333EA),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                    child: const Text(
-                      'View Full Details',
-                      style: TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWorkoutStat(String value, String label) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[100],
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        children: [
-          Text(
-            value,
-            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 2),
-          Text(label, style: TextStyle(fontSize: 11, color: Colors.grey[600])),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildRecentPRsSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Recent PRs',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          _buildPRItem('Bench Press', '65 Kg', '+5kg', '2 days ago'),
-          const SizedBox(height: 8),
-          _buildPRItem('Squat', '85 Kg', '+10kg', '3 days ago'),
-          const SizedBox(height: 8),
-          _buildPRItem('Deadlift', '105 Kg', '+5kg', '2 days ago'),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPRItem(
-    String name,
-    String weight,
-    String increase,
-    String time,
-  ) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  time,
-                  style: TextStyle(fontSize: 12, color: Colors.grey[600]),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+      body: RefreshIndicator(
+        onRefresh: _loadAll,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                weight,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFFEF4444),
-                ),
+              const SizedBox(height: 24),
+              LastWorkoutCard(session: _lastWorkout, loading: _statsLoading),
+              const SizedBox(height: 24),
+              RecentPRs(records: _recentPRs),
+              if (_recentPRs.isNotEmpty) const SizedBox(height: 24),
+              RoutineList(
+                routines: _routines,
+                lastPlayedPerRoutine: _lastPlayedPerRoutine,
+                onChanged: _loadAll,
               ),
-              Text(
-                increase,
-                style: const TextStyle(
-                  fontSize: 12,
-                  color: Color(0xFF22C55E),
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              const SizedBox(height: 32),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildMyRoutinesSection() {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'My Routines',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 12),
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _routinesFuture,
-            builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32),
-                    child: CircularProgressIndicator(),
-                  ),
-                );
-              }
-
-              final routines = snapshot.data!;
-
-              if (routines.isEmpty) {
-                return Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Column(
-                      children: [
-                        Icon(
-                          Icons.fitness_center,
-                          size: 48,
-                          color: Colors.grey[400],
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          'No routines yet',
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
-
-              return Column(
-                children: routines.map((routine) {
-                  return FutureBuilder<int>(
-                    future: _getExerciseCount(routine['id']),
-                    builder: (context, exerciseSnapshot) {
-                      final exerciseCount = exerciseSnapshot.data ?? 0;
-                      return RoutineCard(
-                        routine: routine,
-                        exerciseCount: exerciseCount,
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => RoutineFormPage(routine: routine),
-                            ),
-                          );
-                          _loadRoutines();
-                        },
-                      );
-                    },
-                  );
-                }).toList(),
-              );
-            },
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/gestures.dart';
-import '../repositories/auth_repository.dart';
 import '../services/auth_service.dart';
 
 class SignUpPage extends StatefulWidget {
@@ -37,7 +36,7 @@ class _SignUpPageState extends State<SignUpPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (!_agreedToTerms) {
-      setState(() => _errorText = 'กรุณายอมรับข้อกำหนดและเงื่อนไข');
+      setState(() => _errorText = 'Please agree to the terms and conditions');
       return;
     }
 
@@ -81,7 +80,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 24),
                 const Text(
-                  'สมัครสมาชิกสำเร็จ!',
+                  'Account Created!',
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
@@ -90,7 +89,7 @@ class _SignUpPageState extends State<SignUpPage> {
                 ),
                 const SizedBox(height: 12),
                 const Text(
-                  'กรุณาตรวจสอบอีเมลเพื่อยืนยันบัญชี',
+                  'Please check your email to verify your account.',
                   textAlign: TextAlign.center,
                   style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                 ),
@@ -112,7 +111,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     ),
                     child: const Text(
-                      'ตกลง',
+                      'OK',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
@@ -126,7 +125,7 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       );
     } catch (e) {
-      setState(() => _errorText = 'สมัครสมาชิกไม่สำเร็จ กรุณาลองใหม่อีกครั้ง');
+      setState(() => _errorText = 'Sign up failed. Please try again.');
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -167,10 +166,12 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Icon(
-                      Icons.fitness_center,
-                      size: 40,
-                      color: Colors.white,
+                    child: Center(
+                      child: Image.asset(
+                        'assets/logo.png',
+                        width: 50,
+                        height: 50,
+                      ),
                     ),
                   ),
 
@@ -178,7 +179,7 @@ class _SignUpPageState extends State<SignUpPage> {
 
                   // Title
                   const Text(
-                    'สร้างบัญชีใหม่',
+                    'Create Account',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -189,7 +190,7 @@ class _SignUpPageState extends State<SignUpPage> {
                   const SizedBox(height: 8),
 
                   const Text(
-                    'เริ่มต้นเส้นทางสู่สุขภาพที่ดีขึ้น',
+                    'Start your journey to a healthier you',
                     style: TextStyle(fontSize: 16, color: Color(0xFF6B7280)),
                   ),
 
@@ -234,7 +235,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     keyboardType: TextInputType.emailAddress,
                     style: const TextStyle(fontSize: 16),
                     decoration: InputDecoration(
-                      labelText: 'อีเมล',
+                      labelText: 'Email',
                       hintText: 'example@email.com',
                       prefixIcon: const Icon(Icons.email_outlined),
                       filled: true,
@@ -274,10 +275,10 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'กรุณากรอกอีเมล';
+                        return 'Please enter your email';
                       }
                       if (!value.contains('@') || !value.contains('.')) {
-                        return 'รูปแบบอีเมลไม่ถูกต้อง';
+                        return 'Invalid email format';
                       }
                       return null;
                     },
@@ -291,7 +292,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     obscureText: _obscurePassword,
                     style: const TextStyle(fontSize: 16),
                     decoration: InputDecoration(
-                      labelText: 'รหัสผ่าน',
+                      labelText: 'Password',
                       hintText: '••••••••',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
@@ -343,10 +344,10 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'กรุณากรอกรหัสผ่าน';
+                        return 'Please enter your password';
                       }
                       if (value.length < 6) {
-                        return 'รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร';
+                        return 'Password must be at least 6 characters';
                       }
                       return null;
                     },
@@ -360,7 +361,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     obscureText: _obscureConfirmPassword,
                     style: const TextStyle(fontSize: 16),
                     decoration: InputDecoration(
-                      labelText: 'ยืนยันรหัสผ่าน',
+                      labelText: 'Confirm Password',
                       hintText: '••••••••',
                       prefixIcon: const Icon(Icons.lock_outline),
                       suffixIcon: IconButton(
@@ -412,10 +413,10 @@ class _SignUpPageState extends State<SignUpPage> {
                     ),
                     validator: (value) {
                       if (value == null || value.isEmpty) {
-                        return 'กรุณายืนยันรหัสผ่าน';
+                        return 'Please confirm your password';
                       }
                       if (value != _passwordController.text) {
-                        return 'รหัสผ่านไม่ตรงกัน';
+                        return 'Passwords do not match';
                       }
                       return null;
                     },
@@ -460,9 +461,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                   height: 1.5,
                                 ),
                                 children: [
-                                  const TextSpan(text: 'ฉันยอมรับ'),
+                                  const TextSpan(text: 'I agree to the'),
                                   TextSpan(
-                                    text: 'ข้อกำหนดและเงื่อนไข',
+                                    text: 'Terms and Conditions',
                                     style: const TextStyle(
                                       color: Color(0xFFFF8551),
                                       fontWeight: FontWeight.w600,
@@ -472,9 +473,9 @@ class _SignUpPageState extends State<SignUpPage> {
                                         // Navigate to terms and conditions
                                       },
                                   ),
-                                  const TextSpan(text: ' และ'),
+                                  const TextSpan(text: ' and'),
                                   TextSpan(
-                                    text: 'นโยบายความเป็นส่วนตัว',
+                                    text: 'Privacy Policy',
                                     style: const TextStyle(
                                       color: Color(0xFFFF8551),
                                       fontWeight: FontWeight.w600,
@@ -498,38 +499,41 @@ class _SignUpPageState extends State<SignUpPage> {
                   // Sign Up Button
                   SizedBox(
                     height: 56,
-                    child: ElevatedButton(
-                      onPressed: _loading ? null : _signUp,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFF8551),
-                        foregroundColor: Colors.white,
-                        disabledBackgroundColor: const Color(
-                          0xFFFF8551,
-                        ).withOpacity(0.6),
-                        elevation: 0,
-                        shadowColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
+                    width: double.infinity,
+                    child: InkWell(
+                      onTap: _loading ? null : _signUp,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Ink(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFF8551), Color(0xFFEF4444)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      child: _loading
-                          ? const SizedBox(
-                              height: 24,
-                              width: 24,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2.5,
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                        child: Center(
+                          child: _loading
+                              ? const SizedBox(
+                                  height: 24,
+                                  width: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2.5,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      Colors.white,
+                                    ),
+                                  ),
+                                )
+                              : const Text(
+                                  'Sign Up',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
                                 ),
-                              ),
-                            )
-                          : const Text(
-                              'สมัครสมาชิก',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                        ),
+                      ),
                     ),
                   ),
 
@@ -540,7 +544,7 @@ class _SignUpPageState extends State<SignUpPage> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Text(
-                        'มีบัญชีอยู่แล้ว? ',
+                        'Already have an account? ',
                         style: TextStyle(
                           color: Color(0xFF6B7280),
                           fontSize: 14,
@@ -561,7 +565,7 @@ class _SignUpPageState extends State<SignUpPage> {
                           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                         ),
                         child: const Text(
-                          'เข้าสู่ระบบ',
+                          'Log In',
                           style: TextStyle(
                             color: Color(0xFFFF8551),
                             fontSize: 14,

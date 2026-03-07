@@ -18,4 +18,9 @@ class AuthRepository {
   Future<void> signUp(String email, String password) async {
     await _client.auth.signUp(email: email, password: password);
   }
+
+  Future<void> deleteAccount() async {
+    await _client.rpc('delete_user');
+    await _client.auth.signOut();
+  }
 }

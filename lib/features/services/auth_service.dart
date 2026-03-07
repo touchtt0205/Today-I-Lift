@@ -22,4 +22,8 @@ class AuthService {
 
     await _repo.signUp(email.trim(), password);
   }
+
+  Future<void> deleteAccount() {
+    return _repo.deleteAccount();
+  }
 }

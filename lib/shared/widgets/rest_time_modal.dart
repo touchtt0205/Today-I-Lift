@@ -8,7 +8,8 @@ Future<void> showRestTimerPopup(
   await showModalBottomSheet(
     context: context,
     isScrollControlled: true,
-    builder: (_) => _RestTimerPopup(initialSeconds: initialSeconds, onSkip: onSkip),
+    builder: (_) =>
+        _RestTimerPopup(initialSeconds: initialSeconds, onSkip: onSkip),
   );
 }
 
@@ -84,7 +85,11 @@ class _RestTimerPopupState extends State<_RestTimerPopup> {
           const SizedBox(height: 16),
           Text(
             _time,
-            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.orangeAccent),
+            style: const TextStyle(
+              fontSize: 48,
+              fontWeight: FontWeight.bold,
+              color: Colors.orangeAccent,
+            ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -105,9 +110,13 @@ class _RestTimerPopupState extends State<_RestTimerPopup> {
               },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: const Color(0xFFFF8551),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Skip Rest'),
+              child: const Text('Skip'),
             ),
           ),
         ],
@@ -127,7 +136,10 @@ class _RestTimerPopupState extends State<_RestTimerPopup> {
           border: Border.all(color: Colors.grey[300]!),
         ),
         child: Center(
-          child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)),
+          child: Text(
+            text,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
         ),
       ),
     );

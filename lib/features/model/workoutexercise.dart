@@ -7,6 +7,8 @@ class WorkoutExercise {
   final double weight;
   final int? previousReps;
   final double? previousWeight;
+  final List<Map<String, dynamic>> setTemplates;
+  final List<Map<String, dynamic>> previousSets;
 
   WorkoutExercise({
     required this.id,
@@ -17,6 +19,8 @@ class WorkoutExercise {
     required this.weight,
     this.previousReps,
     this.previousWeight,
+    this.setTemplates = const [],
+    this.previousSets = const [],
   });
 
   factory WorkoutExercise.fromMap(Map<String, dynamic> map) {

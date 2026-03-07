@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:today_i_lift/features/repositories/routine_item_repository.dart';
+import 'package:today_i_lift/features/repositories/routine_repository.dart';
 import 'package:today_i_lift/shared/widgets/gradient_app_bar.dart';
 import 'package:today_i_lift/shared/widgets/routine_card.dart';
-import '../repositories/routine_repository.dart';
-import '../repositories/routine_item_repository.dart';
 import 'routine_form_page.dart';
 
 class RoutineListPage extends StatefulWidget {

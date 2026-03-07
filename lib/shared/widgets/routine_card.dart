@@ -5,6 +5,7 @@ class RoutineCard extends StatelessWidget {
   final Map<String, dynamic> routine;
   final int exerciseCount;
   final VoidCallback onTap;
+  final DateTime? lastPlayed;
 
   final VoidCallback? onEdit;
   final VoidCallback? onDelete;
@@ -14,6 +15,7 @@ class RoutineCard extends StatelessWidget {
     required this.routine,
     required this.exerciseCount,
     required this.onTap,
+    this.lastPlayed,
     this.onEdit,
     this.onDelete,
   });
@@ -49,10 +51,21 @@ class RoutineCard extends StatelessWidget {
           routineName,
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
-        subtitle: Text(
-          '$exerciseCount exercises',
-          style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '$exerciseCount exercises',
+              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+            ),
+            if (lastPlayed != null)
+              Text(
+                _formatTimeAgo(lastPlayed!),
+                style: TextStyle(fontSize: 11, color: Colors.grey[400]),
+              ),
+          ],
         ),
+
         onTap: onTap,
 
         trailing: (onEdit != null && onDelete != null)
@@ -78,5 +91,13 @@ class RoutineCard extends StatelessWidget {
             : const Icon(Icons.chevron_right, color: Colors.grey),
       ),
     );
+  }
+
+  String _formatTimeAgo(DateTime date) {
+    final diff = DateTime.now().difference(date);
+    if (diff.inDays == 0) return 'Today';
+    if (diff.inDays == 1) return 'Yesterday';
+    if (diff.inDays < 7) return '${diff.inDays} Days Ago';
+    return '${(diff.inDays / 7).floor()} Weeks Ago';
   }
 }
