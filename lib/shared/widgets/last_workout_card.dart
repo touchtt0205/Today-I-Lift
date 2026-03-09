@@ -19,7 +19,7 @@ class LastWorkoutCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Last Workout',
+            'Last Routine',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 12),
@@ -42,7 +42,7 @@ class LastWorkoutCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
-        'No workouts yet\nStart your first workout!',
+        'No routine yet\nStart your first routine!',
         textAlign: TextAlign.center,
         style: TextStyle(color: Colors.grey[500]),
       ),
