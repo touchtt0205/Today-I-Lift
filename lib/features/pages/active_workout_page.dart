@@ -66,15 +66,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
   }
 
   Future<void> _loadExercises() async {
-    debugPrint('LOAD EXERCISES START');
     exercises = await _workoutService.getExercisesForWorkout(widget.workout.id);
-
-    for (final e in exercises) {
-      debugPrint(
-        'Exercise: ${e.name} | weight: ${e.weight} | reps: ${e.reps} | prevW: ${e.previousWeight} | prevR: ${e.previousReps}',
-      );
-    }
-
     if (!mounted) return;
 
     setState(() => loading = false);
@@ -202,19 +194,7 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
       itemCount: exercises.length,
       itemBuilder: (context, i) {
         final ex = exercises[i];
-
-        // final initialSets = List.generate(
-        //   ex.sets,
-        //   (_) => SetData(
-        //     prev: ex.previousWeight != null
-        //         ? "${ex.previousWeight} x ${ex.previousReps}"
-        //         : "-",
-        //     kg: ex.weight.toInt().toString(),
-        //     reps: ex.reps.toString(),
-        //   ),
-        // );
         final initialSets = List.generate(
-          // ใช้จำนวน sets จาก template ถ้ามี ไม่งั้นใช้ ex.sets
           ex.setTemplates.isNotEmpty ? ex.setTemplates.length : ex.sets,
           (i) {
             final prevSet = ex.previousSets.length > i
@@ -224,8 +204,6 @@ class _ActiveWorkoutScreenState extends State<ActiveWorkoutScreen> {
                 ? ex.setTemplates[i]
                 : null;
 
-            // ถ้าเคยเล่นมาแล้ว → ใช้ค่าจาก previous sets
-            // ถ้ายังไม่เคยเล่น → ใช้ค่าจาก template
             final kg = prevSet != null
                 ? (prevSet['weight'] as double).toInt().toString()
                 : template != null

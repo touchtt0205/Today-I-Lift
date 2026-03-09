@@ -91,7 +91,7 @@ class WorkoutRepository {
   Future<int> finishWorkout(String sessionId) async {
     final res = await _supabase
         .from('workout_sessions')
-        .select('started_at')
+        .select('started_at, user_id')
         .eq('id', sessionId)
         .single();
 
@@ -108,7 +108,62 @@ class WorkoutRepository {
         })
         .eq('id', sessionId);
 
+    // อัพเดท PR
+    await _updatePersonalRecords(sessionId, res['user_id']);
+
     return duration;
+  }
+
+  Future<void> _updatePersonalRecords(String sessionId, String userId) async {
+    // ดึง max weight ต่อท่าใน session นี้
+    final sets = await _supabase
+        .from('workout_sets')
+        .select('exercise_id, weight, reps')
+        .eq('session_id', sessionId);
+
+    // หา max weight ต่อท่า
+    final maxPerExercise = <String, Map<String, dynamic>>{};
+    for (final row in List<Map<String, dynamic>>.from(sets)) {
+      final exId = row['exercise_id'] as String;
+      final w = (row['weight'] as num).toDouble();
+      if (!maxPerExercise.containsKey(exId) ||
+          w > (maxPerExercise[exId]!['weight'] as num).toDouble()) {
+        maxPerExercise[exId] = row;
+      }
+    }
+
+    // เปรียบเทียบกับ PR เดิม และ upsert
+    for (final entry in maxPerExercise.entries) {
+      final exId = entry.key;
+      final newWeight = (entry.value['weight'] as num).toDouble();
+      final newReps = entry.value['reps'] as int;
+
+      // ดึง PR เดิม
+      final existing = await _supabase
+          .from('personal_records')
+          .select('weight')
+          .eq('user_id', userId)
+          .eq('exercise_id', exId)
+          .maybeSingle();
+
+      final prevWeight = existing != null
+          ? (existing['weight'] as num).toDouble()
+          : 0.0;
+
+      // ถ้า PR ใหม่มากกว่า → upsert
+      if (newWeight > prevWeight) {
+        await _supabase.from('personal_records').upsert({
+          'user_id': userId,
+          'exercise_id': exId,
+          'session_id': sessionId,
+          'weight': newWeight,
+          'reps': newReps,
+          'previous_weight': prevWeight == 0 ? null : prevWeight,
+          'increase': prevWeight == 0 ? newWeight : newWeight - prevWeight,
+          'achieved_at': DateTime.now().toUtc().toIso8601String(),
+        }, onConflict: 'user_id, exercise_id');
+      }
+    }
   }
 
   // ================= SET =================
