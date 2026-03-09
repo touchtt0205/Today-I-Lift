@@ -421,85 +421,111 @@ class AnalyticsRepository {
     };
   }
 
+  // Future<List<Map<String, dynamic>>> getRecentPRs() async {
+  //   // ดึง session ล่าสุด
+  //   final lastSession = await _supabase
+  //       .from('workout_sessions')
+  //       .select('id, started_at')
+  //       .eq('user_id', _userId)
+  //       .eq('status', 'completed')
+  //       .order('started_at', ascending: false)
+  //       .limit(1)
+  //       .maybeSingle();
+
+  //   if (lastSession == null) return [];
+
+  //   // ดึง session ก่อนหน้า (อันที่ 2)
+  //   final prevSession = await _supabase
+  //       .from('workout_sessions')
+  //       .select('id')
+  //       .eq('user_id', _userId)
+  //       .eq('status', 'completed')
+  //       .lt('started_at', lastSession['started_at'])
+  //       .order('started_at', ascending: false)
+  //       .limit(1)
+  //       .maybeSingle();
+
+  //   // sets ของ session ล่าสุด
+  //   final currentSets = await _supabase
+  //       .from('workout_sets')
+  //       .select('weight, reps, exercises(name, muscle_group)')
+  //       .eq('session_id', lastSession['id']);
+
+  //   // PR สูงสุดของ session ก่อนหน้า
+  //   final prevPRMap = <String, double>{};
+  //   if (prevSession != null) {
+  //     final prevSets = await _supabase
+  //         .from('workout_sets')
+  //         .select('weight, exercises(name)')
+  //         .eq('session_id', prevSession['id']);
+
+  //     for (final row in List<Map<String, dynamic>>.from(prevSets)) {
+  //       final name = row['exercises']?['name'] as String?;
+  //       if (name == null) continue;
+  //       final w = (row['weight'] as num).toDouble();
+  //       if (!prevPRMap.containsKey(name) || w > prevPRMap[name]!) {
+  //         prevPRMap[name] = w;
+  //       }
+  //     }
+  //   }
+
+  //   // max weight ของ session ล่าสุด ต่อท่า
+  //   final currentMax = <String, Map<String, dynamic>>{};
+  //   for (final row in List<Map<String, dynamic>>.from(currentSets)) {
+  //     final name = row['exercises']?['name'] as String?;
+  //     if (name == null) continue;
+  //     final w = (row['weight'] as num).toDouble();
+  //     if (!currentMax.containsKey(name) ||
+  //         w > (currentMax[name]!['weight'] as num).toDouble()) {
+  //       currentMax[name] = row;
+  //     }
+  //   }
+
+  //   // เปรียบเทียบ
+  //   final result = <Map<String, dynamic>>[];
+  //   currentMax.forEach((name, row) {
+  //     final weight = (row['weight'] as num).toDouble();
+  //     final prevPR = prevPRMap[name] ?? 0.0;
+
+  //     if (weight > prevPR) {
+  //       result.add({
+  //         'name': name,
+  //         'muscle_group': row['exercises']?['muscle_group'],
+  //         'weight': weight,
+  //         'reps': row['reps'],
+  //         'increase': prevPR == 0 ? weight : weight - prevPR,
+  //         'date': lastSession['started_at'],
+  //       });
+  //     }
+  //   });
+
+  //   return result;
+  // }
+
   Future<List<Map<String, dynamic>>> getRecentPRs() async {
-    // ดึง session ล่าสุด
-    final lastSession = await _supabase
-        .from('workout_sessions')
-        .select('id, started_at')
+    final result = await _supabase
+        .from('personal_records')
+        .select(
+          'weight, reps, increase, previous_weight, achieved_at, exercises(name, muscle_group)',
+        )
         .eq('user_id', _userId)
-        .eq('status', 'completed')
-        .order('started_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    if (lastSession == null) return [];
-
-    // ดึง session ก่อนหน้า (อันที่ 2)
-    final prevSession = await _supabase
-        .from('workout_sessions')
-        .select('id')
-        .eq('user_id', _userId)
-        .eq('status', 'completed')
-        .lt('started_at', lastSession['started_at'])
-        .order('started_at', ascending: false)
-        .limit(1)
-        .maybeSingle();
-
-    // sets ของ session ล่าสุด
-    final currentSets = await _supabase
-        .from('workout_sets')
-        .select('weight, reps, exercises(name, muscle_group)')
-        .eq('session_id', lastSession['id']);
-
-    // PR สูงสุดของ session ก่อนหน้า
-    final prevPRMap = <String, double>{};
-    if (prevSession != null) {
-      final prevSets = await _supabase
-          .from('workout_sets')
-          .select('weight, exercises(name)')
-          .eq('session_id', prevSession['id']);
-
-      for (final row in List<Map<String, dynamic>>.from(prevSets)) {
-        final name = row['exercises']?['name'] as String?;
-        if (name == null) continue;
-        final w = (row['weight'] as num).toDouble();
-        if (!prevPRMap.containsKey(name) || w > prevPRMap[name]!) {
-          prevPRMap[name] = w;
-        }
-      }
-    }
-
-    // max weight ของ session ล่าสุด ต่อท่า
-    final currentMax = <String, Map<String, dynamic>>{};
-    for (final row in List<Map<String, dynamic>>.from(currentSets)) {
-      final name = row['exercises']?['name'] as String?;
-      if (name == null) continue;
-      final w = (row['weight'] as num).toDouble();
-      if (!currentMax.containsKey(name) ||
-          w > (currentMax[name]!['weight'] as num).toDouble()) {
-        currentMax[name] = row;
-      }
-    }
-
-    // เปรียบเทียบ
-    final result = <Map<String, dynamic>>[];
-    currentMax.forEach((name, row) {
-      final weight = (row['weight'] as num).toDouble();
-      final prevPR = prevPRMap[name] ?? 0.0;
-
-      if (weight > prevPR) {
-        result.add({
-          'name': name,
-          'muscle_group': row['exercises']?['muscle_group'],
-          'weight': weight,
-          'reps': row['reps'],
-          'increase': prevPR == 0 ? weight : weight - prevPR,
-          'date': lastSession['started_at'],
-        });
-      }
-    });
-
-    return result;
+        .order('achieved_at', ascending: false);
+    return List<Map<String, dynamic>>.from(result)
+        .map(
+          (row) => {
+            'name': row['exercises']?['name'],
+            'muscle_group': row['exercises']?['muscle_group'],
+            'weight': (row['weight'] as num).toDouble(), // ← as num ก่อน
+            'reps': row['reps'] as int,
+            'increase': (row['increase'] as num).toDouble(), // ← as num ก่อน
+            'previous_weight': row['previous_weight'] != null
+                ? (row['previous_weight'] as num)
+                      .toDouble() // ← as num ก่อน
+                : null,
+            'date': row['achieved_at'],
+          },
+        )
+        .toList();
   }
 
   /// Last played date ต่อ routine
