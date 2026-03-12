@@ -125,7 +125,8 @@ class _SignUpPageState extends State<SignUpPage> {
         ),
       );
     } catch (e) {
-      setState(() => _errorText = 'Sign up failed. Please try again.');
+      // setState(() => _errorText = 'Sign up failed. Please try again.');
+      setState(() => _errorText = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
     }
